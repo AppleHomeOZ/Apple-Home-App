@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Apple Repair</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root { --primary: #9b2dff; --bg-color: #ffffff; --input-bg: #f2f2f7; --text-dark: #1d1d1f; --text-muted: #86868b; }
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 0; background: var(--bg-color); color: var(--text-dark); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        
+        #welcome-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #6b00ff 0%, #aa00ff 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s ease, transform 0.5s ease; }
+        .logo-container { width: 120px; height: 120px; margin-bottom: 20px; }
+        .welcome-title { font-size: 38px; font-weight: 800; color: #ffffff; margin: 0; }
+        .welcome-subtitle { color: rgba(255,255,255,0.8); margin-top: 5px; font-size: 17px; }
+        .start-btn { margin-top: 50px; background: #ffffff; color: var(--primary); border: none; padding: 16px 50px; border-radius: 30px; font-size: 17px; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; }
+
+        #main-app { display: none; padding: 24px; animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .header-small { margin-bottom: 30px; margin-top: 10px; }
+        .header-small h2 { margin: 0; font-size: 28px; font-weight: 700; color: var(--primary); letter-spacing: -0.5px;}
+        .header-small p { margin: 5px 0 0 0; font-size: 15px; color: var(--text-muted); }
+
+        .field { margin-bottom: 20px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--primary); text-transform: uppercase; }
+        select, input, textarea { width: 100%; padding: 16px; border-radius: 14px; border: 1px solid transparent; background: var(--input-bg); color: var(--text-dark); font-size: 17px; box-sizing: border-box; outline: none; transition: all 0.2s; -webkit-appearance: none; font-family: inherit;}
+        select:focus, input:focus, textarea:focus { border: 1px solid var(--primary); background: #ffffff; box-shadow: 0 0 0 4px rgba(155, 45, 255, 0.1); }
+        .hidden-field { display: none; margin-top: 10px; animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+    <div id="welcome-screen">
+        <div class="logo-container">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="256" cy="256" r="256" fill="#000000"/>
+                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" fill="#ffffff" transform="translate(0, -30)"/>
+                <circle cx="400" cy="360" r="70" fill="#9b2dff" stroke="#ffffff" stroke-width="8"/>
+            </svg>
+        </div>
+        <h1 class="welcome-title">Apple Repair</h1>
+        <p class="welcome-subtitle">Профессиональный сервис</p>
+        <button class="start-btn" onclick="startApp()">Оформить заявку</button>
+    </div>
+
+    <div id="main-app">
+        <div class="header-small">
+            <h2>Ваше устройство</h2>
+            <p>Заполните форму, и мастер свяжется с вами.</p>
+        </div>
+
+        <div class="field">
+            <label>Марка устройства</label>
+            <select id="brand" onchange="updateModels()">
+                <option value="" disabled selected>Выберите марку</option>
+                <option value="Apple">Apple</option>
+                <option value="Samsung">Samsung</option>
+                <option value="Xiaomi">Xiaomi</option>
+                <option value="Honor">Honor</option>
+                <option value="Huawei">Huawei</option>
+                <option value="Tecno">Tecno</option>
+                <option value="Oppo">Oppo</option>
+                <option value="Vivo">Vivo</option>
+                <option value="Google Pixel">Google Pixel</option>
+                <option value="Другая">Нет вашей марки?</option>
+            </select>
+            <input type="text" id="customBrand" class="hidden-field" placeholder="Введите название марки">
+        </div>
+        
+        <div class="field">
+            <label>Модель устройства</label>
+            <select id="modelSelect" onchange="checkCustomModel()">
+                <option value="" disabled selected>Сначала выберите марку</option>
+            </select>
+            <input type="text" id="customModel" class="hidden-field" placeholder="Например: A10s, Spark Go">
+        </div>
+
+        <div class="field">
+            <label>Тип поломки</label>
+            <select id="damageType" onchange="checkDamageType()">
+                <option>Замена дисплея / стекла</option>
+                <option>Замена аккумулятора</option>
+                <option>Не заряжается / Замена разъема</option>
+                <option>Телефон выключился и не включается</option>
+                <option>Не работает микрофон / динамик</option>
+                <option>Проблемы с камерой</option>
+                <option>Попадание жидкости (утопленник)</option>
+                <option>Сложный ремонт платы</option>
+                <option value="Диагностика">Диагностика (опишите проблему)</option>
+            </select>
+            <div id="diagnostic-container" class="hidden-field">
+                <textarea id="diagnosticDesc" rows="3" placeholder="Опишите, что происходит с устройством... (например: сам перезагружается, зависает на логотипе)"></textarea>
+            </div>
+        </div>
+
+        <div class="header-small" style="margin-top: 30px;">
+            <h2>Детали и связь</h2>
+        </div>
+        <div class="field">
+            <label>Срочность</label>
+            <input type="text" id="deadline" placeholder="Например: в течение дня">
+        </div>
+        <div class="field">
+            <label>Контактный телефон</label>
+            <input type="text" id="contact" placeholder="+7 (999) 000-00-00">
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Огромная расширенная база
+        const phoneModels = {
+            "Apple": ["iPhone 18 Pro Max", "iPhone 18 Pro", "iPhone 18 Plus", "iPhone 18", "iPhone 17 Pro Max", "iPhone 17 Pro", "iPhone 17 Plus", "iPhone 17", "iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16 Plus", "iPhone 16", "iPhone 15 Pro Max", "iPhone 15 Pro", "iPhone 15", "iPhone 14 Pro Max", "iPhone 14 Pro", "iPhone 14", "iPhone 13 Pro Max", "iPhone 13 Pro", "iPhone 13 mini", "iPhone 13", "iPhone 12 Pro", "iPhone 12", "iPhone 11", "iPhone XR", "iPhone X", "iPhone SE"],
+            "Samsung": ["Galaxy S26 Ultra", "Galaxy S25 Ultra", "Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S23", "Galaxy S22", "Galaxy A57", "Galaxy A56", "Galaxy A55", "Galaxy A54", "Galaxy A53", "Galaxy A52", "Galaxy A51", "Galaxy A50", "Galaxy A35", "Galaxy A34", "Galaxy A33", "Galaxy A17", "Galaxy A16", "Galaxy A15", "Galaxy A14", "Galaxy A13", "Galaxy A12", "Galaxy A11", "Galaxy A10", "Galaxy A10s", "Galaxy A07", "Galaxy A06", "Galaxy A05", "Galaxy A04", "Galaxy A03", "Galaxy A02", "Galaxy A01", "Galaxy A01 Core"],
+            "Tecno": ["Spark Go 2024", "Spark Go 2023", "Spark Go 2022", "Spark 20 Pro", "Spark 20", "Spark 10 Pro", "Spark 10", "Spark 9 Pro", "Spark 9", "Spark 8C", "Spark 8", "Camon 30 Pro", "Camon 30", "Camon 20 Pro", "Camon 19 Pro", "Pova 6 Pro", "Pova 5 Pro", "Pova 4 Pro"],
+            "Xiaomi": ["16 Ultra", "15 Pro", "14 Ultra", "14", "13", "12", "Redmi Note 15 Pro+", "Redmi Note 15", "Redmi Note 14 Pro", "Redmi Note 13", "Redmi Note 12", "Redmi Note 11", "Redmi Note 10", "Redmi Note 9", "Redmi 13C", "Redmi 12C", "Redmi 10", "Redmi 9", "Poco X6 Pro", "Poco X5", "Poco F6", "Poco F5", "Poco M6 Pro"],
+            "Honor": ["Magic 7 Pro", "Magic 6 Pro", "200 Pro", "200", "100", "90", "70", "50", "X9b", "X8b", "X7b", "X6a", "X5 Plus"],
+            "Huawei": ["Mate 70 Pro", "Mate 60 Pro", "Pura 70 Pro", "P60 Pro", "P50", "Nova 12 Pro", "Nova 11", "Nova Y91", "Nova Y71"],
+            "Oppo": ["Find X8", "Find X7", "Reno 12", "Reno 11", "Reno 10", "A98", "A79", "A78", "A58", "A38", "A18"],
+            "Vivo": ["X100 Pro", "X90", "V40", "V30", "V29", "Y200", "Y100", "Y36", "Y27", "Y17s"],
+            "Google Pixel": ["Pixel 10 Pro", "Pixel 9 Pro XL", "Pixel 9", "Pixel 8a", "Pixel 8", "Pixel 7a", "Pixel 7", "Pixel 6"]
+        };
+
+        function startApp() {
+            document.getElementById('welcome-screen').style.transform = 'translateY(-100%)';
+            document.getElementById('welcome-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('welcome-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                tg.MainButton.setText("ОТПРАВИТЬ ЗАЯВКУ");
+                tg.MainButton.color = "#9b2dff";
+                tg.MainButton.show();
+            }, 400);
+        }
+
+        function checkDamageType() {
+            const val = document.getElementById('damageType').value;
+            if (val === "Диагностика") {
+                document.getElementById('diagnostic-container').style.display = 'block';
+            } else {
+                document.getElementById('diagnostic-container').style.display = 'none';
+            }
+        }
+
+        function updateModels() {
+            const brandSelect = document.getElementById('brand').value;
+            const modelSelect = document.getElementById('modelSelect');
+            const customBrand = document.getElementById('customBrand');
+            const customModel = document.getElementById('customModel');
+            
+            if (brandSelect === "Другая") {
+                customBrand.style.display = 'block';
+                modelSelect.style.display = 'none';
+                customModel.style.display = 'block';
+            } else {
+                customBrand.style.display = 'none';
+                modelSelect.style.display = 'block';
+                customModel.style.display = 'none';
+                
+                modelSelect.innerHTML = '<option value="" disabled selected>Выберите модель</option>';
+                
+                if (phoneModels[brandSelect]) {
+                    phoneModels[brandSelect].forEach(model => {
+                        modelSelect.innerHTML += `<option value="${model}">${model}</option>`;
+                    });
+                    modelSelect.innerHTML += `<option value="Другая">Нет Вашего телефона? Укажите модель</option>`;
+                }
+            }
+        }
+
+        function checkCustomModel() {
+            if (document.getElementById('modelSelect').value === "Другая") {
+                document.getElementById('customModel').style.display = 'block';
+            } else {
+                document.getElementById('customModel').style.display = 'none';
+            }
+        }
+
+        tg.MainButton.onClick(function() {
+            let finalBrand = document.getElementById('brand').value;
+            let finalModel = document.getElementById('modelSelect').style.display === 'none' ? '' : document.getElementById('modelSelect').value;
+
+            if (finalBrand === "Другая") {
+                finalBrand = document.getElementById('customBrand').value.trim();
+                finalModel = document.getElementById('customModel').value.trim();
+            } else if (finalModel === "Другая") {
+                finalModel = document.getElementById('customModel').value.trim();
+            }
+
+            const contact = document.getElementById('contact').value.trim();
+            const damage = document.getElementById('damageType').value;
+            const diagDesc = damage === "Диагностика" ? document.getElementById('diagnosticDesc').value.trim() : "";
+            
+            if (!finalBrand || !finalModel || !contact) {
+                tg.showAlert("Заполните марку, модель и контакт!");
+                return;
+            }
+
+            const user = tg.initDataUnsafe?.user;
+            const payload = {
+                brand: finalBrand,
+                model: finalModel,
+                damageType: damage,
+                diagnosticDesc: diagDesc,
+                deadline: document.getElementById('deadline').value || "Не указана",
+                budget: "По согласованию", 
+                contact: contact,
+                username: user?.username ? `@${user.username}` : "Не указан",
+                client_id: user?.id || null
+            };
+
+            tg.MainButton.showProgress();
+
+            fetch(`https://applehomeoz.pythonanywhere.com/api/order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                tg.MainButton.hideProgress();
+                tg.showAlert("Заявка успешно отправлена!", () => tg.close());
+            })
+            .catch(error => {
+                tg.MainButton.hideProgress();
+                tg.showAlert("Произошла ошибка при отправке.");
+            });
+        });
+    </script>
+</body>
+</html>
