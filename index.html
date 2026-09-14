@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple Repair | Заявка на ремонт</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0714;
+            --card-bg: rgba(25, 18, 42, 0.6);
+            --card-border: rgba(147, 51, 234, 0.2);
+            --accent: #9333ea;
+            --accent-gradient: linear-gradient(135deg, #9333ea, #4f46e5);
+            --text-main: #ffffff;
+            --text-secondary: #a1a1aa;
+            --radius: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-main);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(147, 51, 234, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 85% 85%, rgba(79, 70, 229, 0.2) 0%, transparent 50%);
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--card-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Приветственный экран */
+        .welcome-content {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .logo-container {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 20px auto;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(147, 51, 234, 0.3);
+        }
+
+        .logo-svg {
+            width: 55px;
+            height: 55px;
+            fill: #ffffff;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .address-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .address-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .address-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Формы и элементы */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+
+        textarea {
+            resize: none;
+            height: 80px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(147, 51, 234, 0.4);
+            transition: transform 0.1s, opacity 0.2s;
+            margin-top: 6px;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .custom-input-wrap {
+            display: none;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Экран 1: Приветствие и Адрес -->
+        <div class="screen active" id="screen-welcome">
+            <div class="welcome-content">
+                <div class="logo-container">
+                    <!-- Логотип Apple с вырезом под шестеренку -->
+                    <svg class="logo-svg" viewBox="0 0 24 24">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.89 5.09c.63-.77 1.06-1.84.94-2.91-.92.04-2.03.62-2.67 1.39-.58.68-1.09 1.78-.95 2.84 1.03.08 2.05-.51 2.68-1.32z"/>
+                        <!-- Шестеренка в ямке яблока -->
+                        <circle cx="16" cy="6" r="3.5" fill="#9333ea"/>
+                        <path d="M16 3.8v4.4M13.8 6h4.4M14.3 4.5l3.4 3.4M14.3 7.5l3.4-3.4" stroke="#ffffff" stroke-width="0.8"/>
+                    </svg>
+                </div>
+                <h1>Добро пожаловать в Apple Repair</h1>
+            </div>
+
+            <div class="address-box">
+                <div class="address-title">📍 Наш адрес</div>
+                <div class="address-text">г. Орехово-Зуево, Вокзальная дом 6</div>
+                <div class="address-desc">(Рядом со школой Реал, напротив цветочного магазина)</div>
+            </div>
+
+            <button class="btn-primary" onclick="goToForm()">Создать заявку на ремонт</button>
+        </div>
+
+        <!-- Экран 2: Создание заявки -->
+        <div class="screen" id="screen-form">
+            <h2>Новая заявка</h2>
+
+            <div class="form-group">
+                <label>Марка устройства</label>
+                <select id="brandSelect" onchange="onBrandChange()">
+                    <option value="Apple">Apple</option>
+                    <option value="Samsung">Samsung</option>
+                    <option value="Xiaomi">Xiaomi</option>
+                    <option value="Huawei">Huawei</option>
+                    <option value="Honor">Honor</option>
+                    <option value="Tecno">Tecno</option>
+                    <option value="Vivo">Vivo</option>
+                    <option value="Oppo">Oppo</option>
+                    <option value="Другая">Другая марка</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="customBrandGroup" style="display:none;">
+                <label>Введите свою марку</label>
+                <input type="text" id="customBrandInput" placeholder="Например: Realme, Google...">
+            </div>
+
+            <div class="form-group">
+                <label>Модель</label>
+                <select id="modelSelect" onchange="onModelChange()">
+                    <!-- Заполняется динамически -->
+                </select>
+            </div>
+
+            <div class="form-group" id="customModelGroup" style="display:none;">
+                <label>Введите свою модель</label>
+                <input type="text" id="customModelInput" placeholder="Например: Pixel 7 Pro">
+            </div>
+
+            <div class="form-group">
+                <label>Тип поломки</label>
+                <select id="damageSelect" onchange="onDamageChange()">
+                    <option value="Разбит экран / дисплей">Разбит экран / дисплей</option>
+                    <option value="Вздулся аккумулятор">Вздулся аккумулятор</option>
+                    <option value="Быстро садится батарея">Быстро садится батарея</option>
+                    <option value="Не заряжается / разъем">Не заряжается / разъем</option>
+                    <option value="Попала влага / вода">Попала влага / вода</option>
+                    <option value="Не включается / зависает">Не включается / зависает</option>
+                    <option value="Не работает камера">Не работает камера</option>
+                    <option value="Тихий динамик / нет звука">Тихий динамик / нет звука</option>
+                    <option value="Не работает микрофон">Не работает микрофон</option>
+                    <option value="Проблемы с сетью / Wi-Fi">Проблемы с сетью / Wi-Fi</option>
+                    <option value="Разбит задний корпус / стекло">Разбит задний корпус / стекло</option>
+                    <option value="Замена шлейфа кнопок">Замена шлейфа кнопок</option>
+                    <option value="Слетел софт / блокировка">Слетел софт / блокировка</option>
+                    <option value="Замена контроллера питания">Замена контроллера питания</option>
+                    <option value="Не работает Face ID / Touch ID">Не работает Face ID / Touch ID</option>
+                    <option value="Греется при работе">Греется при работе</option>
+                    <option value="Самопроизвольно выключается">Самопроизвольно выключается</option>
+                    <option value="Деформация корпуса">Деформация корпуса</option>
+                    <option value="Полосы на дисплее">Полосы на дисплее</option>
+                    <option value="Другая причина">Другая причина (своя)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="customDamageGroup" style="display:none;">
+                <label>Опишите свою причину</label>
+                <input type="text" id="customDamageInput" placeholder="Что конкретно сломалось?">
+            </div>
+
+            <div class="form-group">
+                <label>Сроки (когда нужно сделать)</label>
+                <input type="text" id="deadlineInput" placeholder="Например: нужно за три часа успеть">
+            </div>
+
+            <div class="form-group">
+                <label>Ваш бюджет</label>
+                <input type="text" id="budgetInput" placeholder="Например: до 5000 рублей">
+            </div>
+
+            <div class="form-group">
+                <label>Номер телефона для связи</label>
+                <input type="tel" id="phoneInput" placeholder="+7 (999) 000-00-00">
+            </div>
+
+            <button class="btn-primary" onclick="submitOrder()">Отправить заявку</button>
+            <a class="back-link" onclick="goBackToWelcome()">← Назад к адресу</a>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Базы моделей
+        const modelsCatalog = {
+            'Apple': generateAppleModels(),
+            'Samsung': generateSamsungModels(),
+            'Xiaomi': ['Xiaomi 14 Ultra', 'Xiaomi 14 Pro', 'Xiaomi 14', 'Xiaomi 13T Pro', 'Xiaomi 13T', 'Xiaomi 13 Ultra', 'Xiaomi 12T', 'Xiaomi 11T', 'Redmi Note 13 Pro+', 'Redmi Note 13 Pro', 'Redmi Note 13', 'Redmi Note 12 Pro', 'Redmi Note 11', 'PCO X6 Pro', 'POCO F5', 'Другая модель'],
+            'Huawei': ['Huawei Pura 70 Ultra', 'Huawei Pura 70', 'Huawei Mate 60 Pro', 'Huawei P60 Pro', 'Huawei Nova 11', 'Huawei Nova 10', 'Huawei Y9a', 'Другая модель'],
+            'Honor': ['Honor Magic 6 Pro', 'Honor Magic 6', 'Honor 90', 'Honor 70', 'Honor X9b', 'Honor X8a', 'Honor 50', 'Другая модель'],
+            'Tecno': generateTecnoModels(),
+            'Vivo': ['Vivo X100 Pro', 'Vivo V30 Pro', 'Vivo V30', 'Vivo V29', 'Vivo Y36', 'Vivo Y27', 'Другая модель'],
+            'Oppo': ['Oppo Find X7 Ultra', 'Oppo Reno 11 Pro', 'Oppo Reno 10', 'Oppo A78', 'Oppo A58', 'Другая модель']
+        };
+
+        function generateAppleModels() {
+            let list = [];
+            // iPhone 6 до 18 Pro Max
+            let series = ['6', '6 Plus', '6s', '6s Plus', '7', '7 Plus', '8', '8 Plus', 'X', 'XR', 'XS', 'XS Max', '11', '11 Pro', '11 Pro Max', '12', '12 mini', '12 Pro', '12 Pro Max', '13', '13 mini', '13 Pro', '13 Pro Max', '14', '14 Plus', '14 Pro', '14 Pro Max', '15', '15 Plus', '15 Pro', '15 Pro Max', '16', '16 Plus', '16 Pro', '16 Pro Max', '17', '17 Pro', '17 Pro Max', '18 Pro Max'];
+            series.forEach(s => list.push('iPhone ' + s));
+            list.push('iPhone SE (любое поколение)');
+            list.push('iPad (разные модели)');
+            list.push('Apple Watch');
+            list.push('Другая модель');
+            return list;
+        }
+
+        function generateSamsungModels() {
+            let list = [];
+            // Серия A (01 до 07, 10 до 17 и т.д.)
+            let aPrefixes = ['01', '02', '03', '04', '05', '06', '07', '10', '11', '12', '13', '14', '15', '16', '17', '20', '21', '22', '23', '24', '25', '30', '31', '32', '33', '34', '35', '50', '51', '52', '53', '54', '55', '56', '70', '71', '72', '73', '80'];
+            aPrefixes.forEach(p => list.push('Galaxy A' + p));
+            
+            // Флагманы S и Fold/Flip
+            ['S24 Ultra', 'S24+', 'S24', 'S23 Ultra', 'S23', 'S22 Ultra', 'S21', 'S20', 'Z Fold 5', 'Z Flip 5'].forEach(m => list.push('Galaxy ' + m));
+            list.push('Другая модель');
+            return list;
+        }
+
+        function generateTecnoModels() {
+            let list = [];
+            ['Camon 30 Premier', 'Camon 30 Pro', 'Camon 30', 'Camon 20', 'Spark 20 Pro', 'Spark 20', 'Spark 10', 'Pova 6 Pro', 'Pova 5 Pro', 'Pova 5', 'Phantom V Fold', 'Phantom X2'];
+            return ['Camon 30 Pro', 'Camon 30', 'Camon 20 Pro', 'Spark 20 Pro', 'Spark 10 Pro', 'Pova 6 Pro', 'Pova 5', 'Phantom V Fold', 'Другая модель'];
+        }
+
+        function updateModels() {
+            const brand = document.getElementById('brandSelect').value;
+            const modelSelect = document.getElementById('modelSelect');
+            modelSelect.innerHTML = '';
+
+            if(modelsCatalog[brand]) {
+                modelsCatalog[brand].forEach(m => {
+                    let opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    modelSelect.appendChild(opt);
+                });
+            }
+            onModelChange();
+        }
+
+        function onBrandChange() {
+            const brand = document.getElementById('brandSelect').value;
+            const customBrandGroup = document.getElementById('customBrandGroup');
+            
+            if(brand === 'Другая') {
+                customBrandGroup.style.display = 'block';
+            } else {
+                customBrandGroup.style.display = 'none';
+            }
+            updateModels();
+        }
+
+        function onModelChange() {
+            const model = document.getElementById('modelSelect').value;
+            const customModelGroup = document.getElementById('customModelGroup');
+            
+            if(model === 'Другая модель' || model.includes('Другая')) {
+                customModelGroup.style.display = 'block';
+            } else {
+                customModelGroup.style.display = 'none';
+            }
+        }
+
+        function onDamageChange() {
+            const damage = document.getElementById('damageSelect').value;
+            const customDamageGroup = document.getElementById('customDamageGroup');
+            
+            if(damage === 'Другая причина') {
+                customDamageGroup.style.display = 'block';
+            } else {
+                customDamageGroup.style.display = 'none';
+            }
+        }
+
+        function goToForm() {
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            document.getElementById('screen-welcome').classList.remove('active');
+            document.getElementById('screen-form').classList.add('active');
+            updateModels();
+        }
+
+        function goBackToWelcome() {
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            document.getElementById('screen-form').classList.remove('active');
+            document.getElementById('screen-welcome').classList.add('active');
+        }
+
+        function submitOrder() {
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+
+            let brand = document.getElementById('brandSelect').value;
+            if(brand === 'Другая') brand = document.getElementById('customBrandInput').value || 'Другая марка';
+
+            let model = document.getElementById('modelSelect').value;
+            if(model.includes('Другая')) model = document.getElementById('customModelInput').value || 'Другая модель';
+
+            let damage = document.getElementById('damageSelect').value;
+            if(damage === 'Другая причина') damage = document.getElementById('customDamageInput').value || 'Другая причина';
+
+            const deadline = document.getElementById('deadlineInput').value;
+            const budget = document.getElementById('budgetInput').value;
+            const phone = document.getElementById('phoneInput').value;
+
+            if(!phone.trim()) {
+                alert('Пожалуйста, укажите номер телефона для связи!');
+                return;
+            }
+
+            const payload = {
+                client_id: tg.initDataUnsafe?.user?.id || "5146462288",
+                username: tg.initDataUnsafe?.user?.username || "user",
+                brand: brand,
+                model: model,
+                damageType: damage,
+                diagnosticDesc: `Сроки: ${deadline || 'Не указано'} | Бюджет: ${budget || 'Не указано'} | Телефон: ${phone}`,
+                budget: budget || 'Не указано',
+                deadline: deadline || 'Не указано',
+                contact: phone,
+                partsQuality: "Стандарт"
+            };
+
+            fetch('/api/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    tg.showAlert("✅ Заявка успешно отправлена! Мы свяжемся с вами.");
+                    tg.close();
+                } else {
+                    alert("Ошибка отправки заявки на сервер.");
+                }
+            })
+            .catch(err => {
+                alert("Ошибка соединения с сервером.");
+            });
+        }
+    </script>
+</body>
+</html>
