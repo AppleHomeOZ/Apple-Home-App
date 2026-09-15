@@ -376,10 +376,32 @@ def webhook():
         for aid in ADMIN_IDS: send_msg(aid, f"⚠️ КРИТИЧЕСКАЯ ОШИБКА В WEBHOOK:\n\n{err_msg[-1500:]}")
         return "OK", 200
 
+@app.route('/api/order', methods=['POST'])
+def handle_web_order():
+    try:
+        from flask import request
+        data = request.json
+        brand = data.get('brand', '')
+        model = data.get('model', '')
+        damage = data.get('damageType', '')
+        desc = data.get('diagnosticDesc', '')
+        contact = data.get('contact', '')
+        
+        msg = f"🚀 <b>НОВАЯ ЗАЯВКА С САЙТА</b>\n\n📱 <b>Устройство:</b> {brand} {model}\n💥 <b>Поломка:</b> {damage}\n💬 <b>Детали:</b> {desc}\n📞 <b>Связь:</b> {contact}"
+        
+        for aid in ADMIN_IDS:
+            send_msg(aid, msg)
+            
+        return {"status": "success"}, 200
+    except Exception as e:
+        return {"status": "error"}, 500
+
 @app.route('/fix')
 def fix_webhook():
-    r = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook?url=https://applehomeoz.pythonanywhere.com/webhook")
+    # Исправили ссылку на твой новый сервер Render!
+    r = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook?url=https://apple-home-app.onrender.com/webhook")
     return r.text
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
